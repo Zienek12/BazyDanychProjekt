@@ -1,0 +1,206 @@
+.admin-dashboard {
+  width: 100%;
+}
+
+.admin-dashboard h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #2d3748;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  color: #667eea;
+}
+
+.tab-btn.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.users-section h2,
+.restaurants-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #2d3748;
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table thead {
+  background: #f7fafc;
+}
+
+.admin-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #4a5568;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.admin-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #2d3748;
+}
+
+.admin-table tbody tr:hover {
+  background: #f7fafc;
+}
+
+.role-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.role-badge.customer {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.role-badge.restaurant {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.role-badge.admin {
+  background: #fbd38d;
+  color: #744210;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.status-badge.blocked,
+.status-badge.pending {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.rating {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-toggle-status {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-toggle-status:hover {
+  background: #5568d3;
+}
+
+.btn-delete {
+  background: #f56565;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-delete:hover {
+  background: #e53e3e;
+}
+
+@media (max-width: 968px) {
+  .admin-table {
+    font-size: 0.875rem;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .table-actions {
+    flex-direction: column;
+  }
+
+  .btn-toggle-status,
+  .btn-delete {
+    width: 100%;
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #667eea;
+  font-size: 1.2rem;
+}
+
+.error {
+  text-align: center;
+  padding: 3rem;
+  color: #f56565;
+  background: #fed7d7;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .admin-table {
+    min-width: 600px;
+  }
+}
+
