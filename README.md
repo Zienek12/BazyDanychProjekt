@@ -3,9 +3,6 @@ W głównym folderze
 
 docker compose up --build
 
-
-Dostęp do aplikacji
-
 Po uruchomieniu:
 
 - **Frontend**: http://localhost (port 80)
