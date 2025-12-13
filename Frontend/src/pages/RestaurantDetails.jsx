@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext'
 import MenuItem from '../components/MenuItem'
 import './RestaurantDetails.css'
 
+// Restaurant details and menu page
 function RestaurantDetails() {
   const { id } = useParams()
   const [restaurant, setRestaurant] = useState(null)
@@ -35,10 +36,11 @@ function RestaurantDetails() {
         description: restaurantData.description || `Restauracja ${restaurantData.name}`
       })
       
+      // Set default values for menu items
       const menuWithImages = menuData.map(item => ({
         ...item,
         restaurantId: item.restaurant?.id || item.restaurantId || restaurantData.id,
-        available: item.available !== false, // Domyślnie true jeśli nie ma pola
+        available: item.available !== false,
         image: item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
       }))
       setMenuItems(menuWithImages)
@@ -50,8 +52,10 @@ function RestaurantDetails() {
     }
   }
 
+  // Get unique categories
   const categories = ['Wszystkie', ...new Set(menuItems.map(item => item.category))]
 
+  // Filter menu by selected category
   const filteredMenu = selectedCategory === 'Wszystkie'
     ? menuItems
     : menuItems.filter(item => item.category === selectedCategory && item.available !== false)

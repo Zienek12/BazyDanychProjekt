@@ -1,5 +1,6 @@
 import './MenuItem.css'
 
+// Single menu item component
 function MenuItem({ item, onAddToCart }) {
   const isAvailable = item.available !== false
 

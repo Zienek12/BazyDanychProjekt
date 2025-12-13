@@ -15,11 +15,11 @@ function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  // Obsługa komunikatu z rejestracji
+  // Registration message
   useEffect(() => {
     if (location.state?.message) {
       setSuccessMessage(location.state.message)
-      // Wyczyść state po wyświetleniu komunikatu
+      // Clear state after display
       navigate(location.pathname, { replace: true, state: {} })
     }
     if (location.state?.email) {

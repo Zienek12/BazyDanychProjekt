@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { menuItemsAPI, restaurantsAPI } from '../services/api'
 import './RestaurantDashboard.css'
 
+// Restaurant management dashboard
 function RestaurantDashboard() {
   const { user } = useAuth()
   const [restaurant, setRestaurant] = useState(null)
@@ -48,10 +49,11 @@ function RestaurantDashboard() {
       setRestaurant(userRestaurant)
       
       const menu = await menuItemsAPI.getByRestaurant(userRestaurant.id)
+      // Set default values for menu items
       const menuWithDefaults = menu.map(item => ({
         ...item,
         restaurantId: item.restaurant?.id || item.restaurantId || userRestaurant.id,
-        available: item.available !== false // Domyślnie true jeśli nie ma pola
+        available: item.available !== false
       }))
       setMenuItems(menuWithDefaults)
     } catch (err) {
@@ -92,6 +94,7 @@ function RestaurantDashboard() {
 
     try {
       if (editingItem) {
+        // Edit via delete and create (API has no update)
         alert('Edycja pozycji menu nie jest jeszcze dostępna przez API')
         await menuItemsAPI.delete(editingItem)
         await menuItemsAPI.create({

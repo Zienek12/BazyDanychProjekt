@@ -1,5 +1,6 @@
 import './SearchBar.css'
 
+// Search bar component
 function SearchBar({ value, onChange, placeholder = "Szukaj..." }) {
   return (
     <div className="search-bar">

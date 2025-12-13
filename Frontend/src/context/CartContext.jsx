@@ -2,9 +2,11 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const CartContext = createContext(null)
 
+// Cart context provider
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([])
 
+  // Load cart from localStorage on startup
   useEffect(() => {
     const savedCart = localStorage.getItem('cart')
     if (savedCart) {
@@ -17,10 +19,12 @@ export function CartProvider({ children }) {
     }
   }, [])
 
+  // Save cart to localStorage on change
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart))
   }, [cart])
 
+  // Add item to cart or increment quantity
   const addToCart = (item) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id)

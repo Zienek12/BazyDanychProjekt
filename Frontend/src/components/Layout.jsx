@@ -17,6 +17,7 @@ function Layout({ children }) {
             <h1>🍽️ FoodOrder</h1>
           </Link>
           
+          {/* Mock API button only in development */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mock-api-toggle">
               <button

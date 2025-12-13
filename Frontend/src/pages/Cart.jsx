@@ -26,9 +26,10 @@ function Cart() {
       return
     }
 
+    // Group orders by restaurant
     const ordersByRestaurant = {}
     cart.forEach(item => {
-      const restaurantId = item.restaurantId || 1 // Jeśli brak restaurantId, użyj domyślnego
+      const restaurantId = item.restaurantId || 1
       if (!ordersByRestaurant[restaurantId]) {
         ordersByRestaurant[restaurantId] = {
           menuItemIds: [],

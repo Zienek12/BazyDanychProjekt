@@ -11,6 +11,7 @@ function shouldUseMockAPI() {
   return DEFAULT_USE_MOCK_API
 }
 
+// HTTP request to API
 async function fetchAPI(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`
   
@@ -22,6 +23,7 @@ async function fetchAPI(endpoint, options = {}) {
     ...options,
   }
 
+  // Add auth token if available
   const token = localStorage.getItem('token')
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`
@@ -47,7 +49,6 @@ async function fetchAPI(endpoint, options = {}) {
         ? errorData 
         : errorData.message || errorData.error || JSON.stringify(errorData)
       
-      // Jeśli komunikat błędu jest pusty lub to tylko status, użyj bardziej opisowego komunikatu
       if (!errorMessage || errorMessage.trim() === '' || errorMessage === `HTTP error! status: ${response.status}`) {
         if (response.status === 500) {
           errorMessage = 'Internal Server Error'
@@ -83,7 +84,6 @@ async function fetchAPI(endpoint, options = {}) {
       connectionError.status = error.status
       throw connectionError
     }
-    // Obsługa błędów związanych z bazą danych
     if (error.status === 500) {
       console.error('API Error: Błąd serwera (500). Możliwy problem z bazą danych.', error)
       const serverError = new Error(error.message || 'Internal Server Error')
@@ -103,6 +103,7 @@ async function fetchAPI(endpoint, options = {}) {
   }
 }
 
+// Choose between real and mock API
 async function callAPI(realAPIFn, mockAPIFn) {
   if (shouldUseMockAPI()) {
     if (!mockAPI) {
@@ -119,8 +120,7 @@ export const usersAPI = {
   register: async (userData) => {
     return callAPI(
       async () => {
-        // Normalizuj email: usuń białe znaki i zamień na małe litery
-        // Backend porównuje emaile case-sensitive, więc musimy upewnić się, że zawsze używamy małych liter
+        // Normalize email
         const normalizedEmail = userData.email.trim().toLowerCase()
         
         console.log('Registering user:', {
@@ -135,7 +135,7 @@ export const usersAPI = {
             name: userData.name.trim(),
             email: normalizedEmail,
             password: userData.password,
-            role: userData.role || 'customer' // Dodaj role, domyślnie 'customer'
+            role: userData.role || 'customer'
           }),
         })
         return response
@@ -150,7 +150,7 @@ export const usersAPI = {
   login: async (email, password) => {
     return callAPI(
       async () => {
-        // Normalizuj email: usuń białe znaki i zamień na małe litery
+        // Normalize email
         const normalizedEmail = email.trim().toLowerCase()
         
         console.log('Attempting login with:', {
@@ -177,7 +177,7 @@ export const usersAPI = {
             email: normalizedEmail
           })
           
-          // Jeśli backend zwraca 500, może to oznaczać, że użytkownik nie istnieje lub hasło nie pasuje
+          // Handle 500 error
           if (error.status === 500) {
             const loginError = new Error('Nieprawidłowy email lub hasło. Sprawdź czy użytkownik istnieje w bazie danych.')
             loginError.status = 500
@@ -349,8 +349,7 @@ export const ordersAPI = {
   getAll: async () => {
     return callAPI(
       async () => {
-        // Backend nie ma endpointu GET /api/orders dla wszystkich zamówień
-        // Zwracamy pustą tablicę z informacją w konsoli
+        // Endpoint not in backend
         console.warn('Backend nie posiada endpointu GET /api/orders. Użyj getByUser() lub getByRestaurant().')
         return []
       },
@@ -406,6 +405,7 @@ export const ordersAPI = {
   updateItem: async (orderId, itemData) => {
     return callAPI(
       () => {
+        // Endpoint unavailable in backend
         return Promise.reject(new Error('Endpoint /orders/{orderId}/item nie jest dostępny w backendzie'))
       },
       async () => {
@@ -439,7 +439,8 @@ export default {
 
 export const toggleMockAPI = (useMock) => {
   localStorage.setItem('useMockAPI', useMock ? 'true' : 'false')
-  window.location.reload() // Przeładuj stronę, aby zastosować zmiany
+  // Reload page
+  window.location.reload()
 }
 
 export const isUsingMockAPI = () => {

@@ -9,7 +9,7 @@ function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'customer' // 'customer' lub 'restaurant'
+    role: 'customer'
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -35,7 +35,7 @@ function Register() {
     try {
       const { confirmPassword, role, ...userDataForBackend } = formData
       
-      // Normalizuj email przed rejestracją (usuń białe znaki i zamień na małe litery)
+      // Normalize email
       const originalEmail = formData.email
       const normalizedEmail = originalEmail.trim().toLowerCase()
       
@@ -53,22 +53,22 @@ function Register() {
         role 
       })
       
-      // Przekaż hasło razem z innymi danymi - ważne: password musi być w obiekcie!
+      // Send data with password
       const result = await register({ 
         ...userDataForBackend, 
         email: normalizedEmail, 
-        password: formData.password, // Dodaj hasło z powrotem!
+        password: formData.password,
         role 
       })
       
       if (result.success) {
-        // Jeśli użytkownik został zalogowany automatycznie
+        // Auto-login after registration
         if (result.user) {
           navigate('/')
         } 
-        // Jeśli rejestracja się powiodła, ale logowanie nie (needsManualLogin)
+        // Requires manual login
         else if (result.needsManualLogin) {
-          // Przekieruj do strony logowania z komunikatem
+          // Redirect to login
           navigate('/login', { 
             state: { 
               message: result.message || 'Rejestracja zakończona pomyślnie! Zaloguj się teraz.',

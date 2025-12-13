@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { ordersAPI, restaurantsAPI, menuItemsAPI } from '../services/api'
 import './OrderHistory.css'
 
+// User order history page
 function OrderHistory() {
   const { user } = useAuth()
   const [orders, setOrders] = useState([])

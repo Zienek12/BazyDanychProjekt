@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import './RestaurantCard.css'
 
+// Restaurant card component
 function RestaurantCard({ restaurant }) {
   return (
     <Link to={`/restaurant/${restaurant.id}`} className="restaurant-card">

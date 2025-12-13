@@ -3,10 +3,12 @@ import { usersAPI } from '../services/api'
 
 const AuthContext = createContext(null)
 
+// Auth context provider
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Load user from localStorage on startup
   useEffect(() => {
     const loadUser = () => {
       const savedUser = localStorage.getItem('user')
@@ -30,6 +32,7 @@ export function AuthProvider({ children }) {
     loadUser()
     setLoading(false)
 
+    // Listen to localStorage changes
     const handleStorageChange = (e) => {
       if (e.key === 'user') {
         if (e.newValue === null) {
@@ -64,7 +67,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      // Normalizuj email: usuń białe znaki i zamień na małe litery
+      // Normalize email
       const normalizedEmail = email.trim().toLowerCase()
       
       console.log('AuthContext login called with:', {
@@ -72,7 +75,7 @@ export function AuthProvider({ children }) {
         normalizedEmail: normalizedEmail
       })
       
-      // Użyj endpointu /api/users/login z backendu
+      // Login via API
       const foundUser = await usersAPI.login(normalizedEmail, password)
       
       console.log('Login result from API:', foundUser)
@@ -82,14 +85,16 @@ export function AuthProvider({ children }) {
         throw new Error('Nieprawidłowy email lub hasło')
       }
 
-      // Sprawdź czy foundUser jest obiektem (może być stringiem w przypadku błędu)
+      // Validate response type
       if (typeof foundUser === 'string') {
         console.error('Login returned string instead of user object:', foundUser)
         throw new Error(foundUser || 'Błąd logowania')
       }
 
+      // Remove password from user object
       const { password: _, ...userWithoutPassword } = foundUser
       
+      // Set user role
       const savedUser = localStorage.getItem('user')
       let userRole = userWithoutPassword.role
       
@@ -109,7 +114,7 @@ export function AuthProvider({ children }) {
       
       const userWithRole = { ...userWithoutPassword, role: userRole }
       
-      // Zapisz token jeśli backend go zwraca
+      // Save token
       if (foundUser.token) {
         localStorage.setItem('token', foundUser.token)
       }
@@ -121,7 +126,7 @@ export function AuthProvider({ children }) {
       console.error('Login error:', error)
       let errorMessage = error.message
       
-      // Obsługa różnych typów błędów
+      // Error handling
       if (error.message.includes('Nie można połączyć się z serwerem')) {
         errorMessage = 'Nie można połączyć się z serwerem. Sprawdź czy backend jest uruchomiony na porcie 8080.'
       } else if (error.message.includes('fetch')) {
@@ -129,8 +134,6 @@ export function AuthProvider({ children }) {
       } else if (error.status === 401 || error.status === 403) {
         errorMessage = 'Nieprawidłowy email lub hasło'
       } else if (error.status === 500) {
-        // Błąd 500 może oznaczać, że użytkownik nie istnieje lub hasło nie pasuje
-        // Backend login używa getSingleResult() które rzuca wyjątek jeśli nie znajdzie użytkownika
         errorMessage = 'Nieprawidłowy email lub hasło. Sprawdź czy konto istnieje i czy hasło jest poprawne.'
       } else if (error.message.includes('Internal Server Error')) {
         errorMessage = 'Błąd serwera podczas logowania. Spróbuj ponownie za chwilę.'
@@ -141,7 +144,7 @@ export function AuthProvider({ children }) {
   }
 
   const register = async (userData) => {
-    // Normalizuj email przed rejestracją (przed try, aby był dostępny w catch)
+    // Normalize email
     const normalizedEmail = userData.email ? userData.email.trim().toLowerCase() : ''
     
     try {
@@ -150,7 +153,7 @@ export function AuthProvider({ children }) {
       const normalizedUserData = {
         ...userDataForBackend,
         email: normalizedEmail,
-        role: role || 'customer' // Dodaj role z powrotem, domyślnie 'customer'
+        role: role || 'customer'
       }
       
       console.log('Registering user:', {
@@ -165,7 +168,7 @@ export function AuthProvider({ children }) {
       console.log('Register response:', response)
       
       if (response === 'User registered' || response.includes('registered')) {
-        // Poczekaj chwilę, aby upewnić się, że użytkownik został zapisany w bazie
+        // Short delay for DB write
         await new Promise(resolve => setTimeout(resolve, 200))
         
         console.log('Attempting login after registration with:', {
@@ -173,9 +176,7 @@ export function AuthProvider({ children }) {
           passwordLength: userData.password ? userData.password.length : 0
         })
         
-        // Użyj znormalizowanego emaila do logowania
-        // Jeśli logowanie się nie powiedzie (błąd 500), nie blokuj rejestracji
-        // Zamiast tego zwróć sukces i pozwól użytkownikowi zalogować się ręcznie
+        // Try auto-login after registration
         let loginResult
         try {
           loginResult = await login(normalizedEmail, userData.password)
@@ -192,13 +193,9 @@ export function AuthProvider({ children }) {
           }
         } catch (loginError) {
           console.error('Login failed after registration (this is OK, user can login manually):', loginError)
-          // Jeśli logowanie się nie powiedzie (np. błąd 500 z backendu),
-          // zwróć sukces rejestracji - użytkownik może zalogować się ręcznie
-          // Nie tworzymy użytkownika lokalnie, bo to może powodować problemy
         }
         
-        // Jeśli dotarliśmy tutaj, rejestracja się powiodła, ale logowanie nie
-        // Zwróć sukces rejestracji - użytkownik będzie musiał zalogować się ręcznie
+        // Registration OK, requires manual login
         return { 
           success: true, 
           user: null,
@@ -220,7 +217,7 @@ export function AuthProvider({ children }) {
       
       const errorMessage = error.message || 'Wystąpił błąd podczas rejestracji'
       
-      // Sprawdź różne warianty komunikatu o istniejącym emailu
+      // Check if email already exists
       if (errorMessage.includes('Email already exists') || 
           errorMessage.includes('already exists') ||
           errorMessage.includes('Email już istnieje') ||

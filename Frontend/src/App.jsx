@@ -15,6 +15,7 @@ import './App.css'
 
 function App() {
   return (
+    // Auth and cart providers
     <AuthProvider>
       <CartProvider>
         <Router>

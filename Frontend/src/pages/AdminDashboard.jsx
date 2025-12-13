@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { usersAPI, restaurantsAPI, ordersAPI } from '../services/api'
 import './AdminDashboard.css'
 
+// Admin dashboard
 function AdminDashboard() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('users')
@@ -53,9 +54,6 @@ function AdminDashboard() {
       return
     }
 
-    // Dezaktywacja jest realizowana przez ustawienie pola active na false
-    // Ponieważ backend nie ma endpointu do zmiany statusu, używamy usuwania z możliwością przywrócenia
-    // W rzeczywistości powinniśmy mieć endpoint PUT /api/users/{id}/deactivate
     alert('Dezaktywacja konta nie jest jeszcze dostępna przez API. Użyj opcji "Usuń" aby usunąć użytkownika.')
   }
 
@@ -63,21 +61,6 @@ function AdminDashboard() {
     alert('Zmiana statusu restauracji nie jest jeszcze dostępna przez API')
   }
 
-  /**
-   * Czyści cały localStorage przeglądarki
-   * 
-   * Usuwa wszystkie dane zapisane lokalnie:
-   * - user (dane zalogowanego użytkownika)
-   * - cart (koszyk)
-   * - token (token autoryzacji)
-   * - useMockAPI (ustawienia Mock API)
-   * - wszystkie inne klucze
-   * 
-   * Alternatywnie można wyczyścić localStorage przez konsolę:
-   * localStorage.clear(); window.location.reload();
-   * 
-   * Więcej informacji: zobacz Frontend/LOCALSTORAGE_INFO.md
-   */
   const clearAllLocalStorage = () => {
     if (!window.confirm(
       'Czy na pewno chcesz wyczyścić CAŁY localStorage?\n\n' +
@@ -92,10 +75,8 @@ function AdminDashboard() {
       return
     }
 
-    // Wyczyść wszystkie klucze localStorage
+    // Clear localStorage and reload page
     localStorage.clear()
-    
-    // Przeładuj stronę, aby zastosować zmiany
     window.location.reload()
   }
 
@@ -106,21 +87,17 @@ function AdminDashboard() {
     }
 
     try {
-      // Sprawdź czy użytkownik ma zamówienia
       let userOrders = []
       try {
         userOrders = await ordersAPI.getByUser(id)
       } catch (ordersErr) {
         console.warn('Could not fetch user orders:', ordersErr)
-        // Kontynuuj nawet jeśli nie udało się pobrać zamówień
       }
 
-      // Sprawdź czy użytkownik jest właścicielem restauracji
       const userRestaurants = restaurants.filter(
         r => r.manager?.id === id || r.managerId === id
       )
 
-      // Jeśli użytkownik ma zamówienia, zapytaj czy je usunąć
       if (userOrders.length > 0) {
         const confirmDeleteOrders = window.confirm(
           `Ten użytkownik ma ${userOrders.length} zamówień. ` +
@@ -128,23 +105,19 @@ function AdminDashboard() {
         )
         
         if (confirmDeleteOrders) {
-          // Usuń wszystkie zamówienia użytkownika
           for (const order of userOrders) {
             try {
               await ordersAPI.delete(order.id)
             } catch (orderErr) {
               console.error(`Error deleting order ${order.id}:`, orderErr)
-              // Kontynuuj usuwanie innych zamówień nawet jeśli jedno się nie powiodło
             }
           }
         } else {
-          // Użytkownik anulował - nie można usunąć użytkownika z zamówieniami
           alert('Nie można usunąć użytkownika, który ma zamówienia. Najpierw usuń zamówienia.')
           return
         }
       }
 
-      // Jeśli użytkownik jest właścicielem restauracji, najpierw usuń restauracje
       if (userRestaurants.length > 0) {
         const confirmDeleteRestaurants = window.confirm(
           `Ten użytkownik jest właścicielem ${userRestaurants.length} restauracji. ` +
@@ -152,23 +125,20 @@ function AdminDashboard() {
         )
         
         if (confirmDeleteRestaurants) {
-          // Usuń wszystkie restauracje użytkownika
           for (const restaurant of userRestaurants) {
             try {
               await restaurantsAPI.delete(restaurant.id)
             } catch (restaurantErr) {
               console.error(`Error deleting restaurant ${restaurant.id}:`, restaurantErr)
-              // Kontynuuj usuwanie innych restauracji nawet jeśli jedna się nie powiodła
             }
           }
         } else {
-          // Użytkownik anulował - nie można usunąć użytkownika z restauracjami
           alert('Nie można usunąć użytkownika, który jest właścicielem restauracji. Najpierw usuń restauracje.')
           return
         }
       }
 
-      // Spróbuj usunąć użytkownika z backendu
+      // Delete user with retry
       let deletionSuccessful = false
       let lastError = null
       
@@ -179,11 +149,10 @@ function AdminDashboard() {
         lastError = deleteErr
         console.error('First deletion attempt failed:', deleteErr)
         
-        // Jeśli usunięcie się nie powiodło, ale już usunęliśmy powiązania,
-        // spróbuj ponownie po krótkim opóźnieniu
+        // Retry after cleaning related data
         if (userRestaurants.length > 0 || userOrders.length > 0) {
           console.log('Retrying user deletion after cleaning up related data...')
-          await new Promise(resolve => setTimeout(resolve, 500)) // Krótkie opóźnienie
+          await new Promise(resolve => setTimeout(resolve, 500))
           
           try {
             await usersAPI.delete(id)
@@ -195,8 +164,6 @@ function AdminDashboard() {
         }
       }
       
-      // Jeśli wszystkie powiązania zostały usunięte, ale backend nadal zwraca błąd,
-      // zapytaj użytkownika czy zaakceptować usunięcie mimo błędu
       if (!deletionSuccessful && (userRestaurants.length > 0 || userOrders.length > 0)) {
         const confirmIgnoreError = window.confirm(
           `Wszystkie powiązane dane (restauracje i zamówienia) zostały usunięte, ` +
@@ -212,19 +179,14 @@ function AdminDashboard() {
       }
       
       if (deletionSuccessful) {
-        // Usuń użytkownika z UI
         setUsers(prevUsers => prevUsers.filter(user => user.id !== id))
-        // Odśwież dane
         await loadData()
       } else {
-        // Jeśli usunięcie się nie powiodło, przywróć dane
         await loadData()
         
-        // Wyświetl szczegółowy komunikat błędu
         const errorMessage = lastError?.message || 'Nieznany błąd'
         const errorData = lastError?.data || ''
         
-        // Spróbuj sparsować szczegóły błędu z JSON
         let errorDetailsText = ''
         try {
           if (typeof errorData === 'string') {
@@ -246,7 +208,6 @@ function AdminDashboard() {
           parsedDetails: errorDetailsText
         })
         
-        // Jeśli wszystkie znane powiązania zostały usunięte, zapytaj czy zaakceptować mimo błędu
         const hasRelatedData = userRestaurants.length > 0 || userOrders.length > 0
         const allRelatedDeleted = userRestaurants.length === 0 && userOrders.length === 0
         
@@ -278,7 +239,6 @@ function AdminDashboard() {
         )
       }
     } catch (err) {
-      // Przywróć użytkownika w UI jeśli usunięcie się nie powiodło
       await loadData()
       
       const errorMessage = err.message || 'Nieznany błąd'

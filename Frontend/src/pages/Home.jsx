@@ -4,8 +4,10 @@ import SearchBar from '../components/SearchBar'
 import RestaurantCard from '../components/RestaurantCard'
 import './Home.css'
 
+// Available restaurant categories
 const categories = ['Wszystkie', 'Włoska', 'Japońska', 'Amerykańska', 'Turecka', 'Wegetariańska', 'Meksykańska']
 
+// Home page with restaurant list
 function Home() {
   const [restaurants, setRestaurants] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,6 +23,7 @@ function Home() {
     try {
       setLoading(true)
       const data = await restaurantsAPI.getAll()
+      // Set default values for restaurants
       const restaurantsWithDefaults = data.map(restaurant => ({
         ...restaurant,
         category: restaurant.category || 'Inne',
@@ -38,6 +41,7 @@ function Home() {
     }
   }
 
+  // Filter restaurants by search and category
   const filteredRestaurants = restaurants.filter(restaurant => {
     const matchesSearch = restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (restaurant.description && restaurant.description.toLowerCase().includes(searchQuery.toLowerCase()))

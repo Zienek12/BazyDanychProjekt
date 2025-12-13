@@ -3,8 +3,10 @@ import { useAuth } from '../context/AuthContext'
 import { ordersAPI, usersAPI, menuItemsAPI, restaurantsAPI } from '../services/api'
 import './Orders.css'
 
+// Available order statuses
 const statusOptions = ['pending', 'in_progress', 'ready', 'delivered', 'cancelled']
 
+// Orders management page for restaurant
 function Orders() {
   const { user } = useAuth()
   const [orders, setOrders] = useState([])
@@ -31,15 +33,13 @@ function Orders() {
         return
       }
 
-      // Pobierz zamówienia dla wszystkich restauracji użytkownika
+      // Load orders from all user restaurants
       const allOrders = []
       for (const restaurant of userRestaurants) {
         try {
           const restaurantOrders = await ordersAPI.getByRestaurant(restaurant.id)
-          // Dodaj informacje o restauracji i kliencie do każdego zamówienia
           const ordersWithDetails = await Promise.all(
             restaurantOrders.map(async (order) => {
-              // Pobierz dane użytkownika (klienta)
               let customerName = `Użytkownik #${order.user?.id || '?'}`
               try {
                 if (order.user?.id) {
@@ -54,7 +54,7 @@ function Orders() {
                 ...order,
                 restaurantName: restaurant.name,
                 customerName: customerName,
-                items: [] // Backend nie zwraca items w Order modelu
+                items: []
               }
             })
           )
@@ -64,7 +64,7 @@ function Orders() {
         }
       }
 
-      // Sortuj zamówienia po dacie (najnowsze pierwsze)
+      // Sort by newest first
       allOrders.sort((a, b) => {
         const dateA = new Date(a.createdAt || 0)
         const dateB = new Date(b.createdAt || 0)
@@ -87,14 +87,12 @@ function Orders() {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await ordersAPI.updateStatus(orderId, newStatus)
-      // Zaktualizuj status w lokalnym stanie
       setOrders(orders.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ))
     } catch (err) {
       alert(`Nie udało się zaktualizować statusu zamówienia: ${err.message || 'Nieznany błąd'}`)
       console.error('Error updating order status:', err)
-      // Odśwież zamówienia, aby przywrócić poprzedni status
       await loadOrders()
     }
   }
