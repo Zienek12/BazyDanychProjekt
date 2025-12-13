@@ -33,12 +33,51 @@ function Register() {
     setLoading(true)
     
     try {
-      const { password, confirmPassword, role, ...userDataForBackend } = formData
-      console.log('Registering user with data:', { ...userDataForBackend, password: '***', role })
-      const result = await register({ ...userDataForBackend, role })
+      const { confirmPassword, role, ...userDataForBackend } = formData
+      
+      // Normalizuj email przed rejestracją (usuń białe znaki i zamień na małe litery)
+      const originalEmail = formData.email
+      const normalizedEmail = originalEmail.trim().toLowerCase()
+      
+      if (originalEmail !== normalizedEmail) {
+        console.log('Email został znormalizowany:', {
+          original: originalEmail,
+          normalized: normalizedEmail
+        })
+      }
+      
+      console.log('Registering user with data:', { 
+        ...userDataForBackend, 
+        email: normalizedEmail,
+        password: '***', 
+        role 
+      })
+      
+      // Przekaż hasło razem z innymi danymi - ważne: password musi być w obiekcie!
+      const result = await register({ 
+        ...userDataForBackend, 
+        email: normalizedEmail, 
+        password: formData.password, // Dodaj hasło z powrotem!
+        role 
+      })
       
       if (result.success) {
-        navigate('/')
+        // Jeśli użytkownik został zalogowany automatycznie
+        if (result.user) {
+          navigate('/')
+        } 
+        // Jeśli rejestracja się powiodła, ale logowanie nie (needsManualLogin)
+        else if (result.needsManualLogin) {
+          // Przekieruj do strony logowania z komunikatem
+          navigate('/login', { 
+            state: { 
+              message: result.message || 'Rejestracja zakończona pomyślnie! Zaloguj się teraz.',
+              email: normalizedEmail 
+            } 
+          })
+        } else {
+          navigate('/')
+        }
       } else {
         setError(result.error || 'Błąd rejestracji')
       }
@@ -100,10 +139,13 @@ function Register() {
             >
               <option value="customer">Klient</option>
               <option value="restaurant">Restaurator</option>
+              <option value="admin">Administrator</option>
             </select>
             <small style={{ display: 'block', marginTop: '0.5rem', color: '#666', fontSize: '0.875rem' }}>
               {formData.role === 'restaurant' 
                 ? 'Jako restaurator będziesz mógł zarządzać restauracją i przyjmować zamówienia.'
+                : formData.role === 'admin'
+                ? 'Jako administrator będziesz mógł zarządzać wszystkimi użytkownikami i restauracjami.'
                 : 'Jako klient będziesz mógł zamawiać jedzenie z restauracji.'}
             </small>
           </div>

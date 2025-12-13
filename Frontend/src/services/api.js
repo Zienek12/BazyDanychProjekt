@@ -43,9 +43,26 @@ async function fetchAPI(endpoint, options = {}) {
         errorData = `HTTP error! status: ${response.status}`
       }
       
-      const errorMessage = typeof errorData === 'string' 
+      let errorMessage = typeof errorData === 'string' 
         ? errorData 
         : errorData.message || errorData.error || JSON.stringify(errorData)
+      
+      // Jeśli komunikat błędu jest pusty lub to tylko status, użyj bardziej opisowego komunikatu
+      if (!errorMessage || errorMessage.trim() === '' || errorMessage === `HTTP error! status: ${response.status}`) {
+        if (response.status === 500) {
+          errorMessage = 'Internal Server Error'
+        } else if (response.status === 400) {
+          errorMessage = 'Bad Request'
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized'
+        } else if (response.status === 403) {
+          errorMessage = 'Forbidden'
+        } else if (response.status === 404) {
+          errorMessage = 'Not Found'
+        } else {
+          errorMessage = `HTTP error! status: ${response.status}`
+        }
+      }
       
       const error = new Error(errorMessage)
       error.status = response.status
@@ -62,7 +79,24 @@ async function fetchAPI(endpoint, options = {}) {
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       console.error('API Error: Nie można połączyć się z backendem. Sprawdź czy backend działa na http://localhost:8080', error)
-      throw new Error('Nie można połączyć się z serwerem. Sprawdź czy backend jest uruchomiony.')
+      const connectionError = new Error('Nie można połączyć się z serwerem. Sprawdź czy backend jest uruchomiony.')
+      connectionError.status = error.status
+      throw connectionError
+    }
+    // Obsługa błędów związanych z bazą danych
+    if (error.status === 500) {
+      console.error('API Error: Błąd serwera (500). Możliwy problem z bazą danych.', error)
+      const serverError = new Error(error.message || 'Internal Server Error')
+      serverError.status = 500
+      serverError.data = error.data
+      throw serverError
+    }
+    if (error.status === 503) {
+      console.error('API Error: Serwis niedostępny (503). Możliwy problem z bazą danych.', error)
+      const serviceError = new Error('Serwis tymczasowo niedostępny. Sprawdź połączenie z bazą danych.')
+      serviceError.status = 503
+      serviceError.data = error.data
+      throw serviceError
     }
     console.error('API Error:', error)
     throw error
@@ -85,12 +119,23 @@ export const usersAPI = {
   register: async (userData) => {
     return callAPI(
       async () => {
+        // Normalizuj email: usuń białe znaki i zamień na małe litery
+        // Backend porównuje emaile case-sensitive, więc musimy upewnić się, że zawsze używamy małych liter
+        const normalizedEmail = userData.email.trim().toLowerCase()
+        
+        console.log('Registering user:', {
+          originalEmail: userData.email,
+          normalizedEmail: normalizedEmail,
+          name: userData.name
+        })
+        
         const response = await fetchAPI('/users/register', {
           method: 'POST',
           body: JSON.stringify({
-            name: userData.name,
-            email: userData.email,
-            password: userData.password
+            name: userData.name.trim(),
+            email: normalizedEmail,
+            password: userData.password,
+            role: userData.role || 'customer' // Dodaj role, domyślnie 'customer'
           }),
         })
         return response
@@ -98,6 +143,54 @@ export const usersAPI = {
       async () => {
         const { mockUsersAPI } = await import('./mockApi.js')
         return mockUsersAPI.register(userData)
+      }
+    )
+  },
+
+  login: async (email, password) => {
+    return callAPI(
+      async () => {
+        // Normalizuj email: usuń białe znaki i zamień na małe litery
+        const normalizedEmail = email.trim().toLowerCase()
+        
+        console.log('Attempting login with:', {
+          normalizedEmail: normalizedEmail,
+          passwordLength: password ? password.length : 0
+        })
+        
+        try {
+          const response = await fetchAPI('/users/login', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: normalizedEmail,
+              password: password
+            }),
+          })
+          
+          console.log('Login response received:', response)
+          return response
+        } catch (error) {
+          console.error('Login API error:', {
+            message: error.message,
+            status: error.status,
+            data: error.data,
+            email: normalizedEmail
+          })
+          
+          // Jeśli backend zwraca 500, może to oznaczać, że użytkownik nie istnieje lub hasło nie pasuje
+          if (error.status === 500) {
+            const loginError = new Error('Nieprawidłowy email lub hasło. Sprawdź czy użytkownik istnieje w bazie danych.')
+            loginError.status = 500
+            loginError.data = error.data
+            throw loginError
+          }
+          
+          throw error
+        }
+      },
+      async () => {
+        const { mockUsersAPI } = await import('./mockApi.js')
+        return mockUsersAPI.login(email, password)
       }
     )
   },
@@ -255,8 +348,11 @@ export const ordersAPI = {
 
   getAll: async () => {
     return callAPI(
-      () => {
-        return Promise.resolve([])
+      async () => {
+        // Backend nie ma endpointu GET /api/orders dla wszystkich zamówień
+        // Zwracamy pustą tablicę z informacją w konsoli
+        console.warn('Backend nie posiada endpointu GET /api/orders. Użyj getByUser() lub getByRestaurant().')
+        return []
       },
       async () => {
         const { mockOrdersAPI } = await import('./mockApi.js')
@@ -287,9 +383,7 @@ export const ordersAPI = {
 
   getByRestaurant: async (restaurantId) => {
     return callAPI(
-      () => {
-        return Promise.resolve([])
-      },
+      () => fetchAPI(`/orders/restaurant/${restaurantId}`),
       async () => {
         const { mockOrdersAPI } = await import('./mockApi.js')
         return mockOrdersAPI.getByRestaurant(restaurantId)

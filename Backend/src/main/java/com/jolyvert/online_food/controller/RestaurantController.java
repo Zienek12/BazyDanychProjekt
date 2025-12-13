@@ -29,6 +29,11 @@ public class RestaurantController {
         return service.findById(id);
     }
 
+    @GetMapping("/manager/{manager_id}")
+    public List<Restaurant> getByManager(@PathVariable int manager_id) {
+        return service.findByManager(manager_id);
+    }
+
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody RestaurantDto restaurantDto) {
         service.createRestaurant(restaurantDto.getName(), restaurantDto.getAddress(), restaurantDto.getManagerId());

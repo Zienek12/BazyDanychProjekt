@@ -16,14 +16,8 @@ public class User {
     private String name;
     private String email;
     private String password;
+    private String role;
 
-    public User() {}
-
-    public User(Integer id, String name, String email) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-    }
 
     // getters + setters
 }

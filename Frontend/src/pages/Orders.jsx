@@ -20,6 +20,8 @@ function Orders() {
   const loadOrders = async () => {
     try {
       setLoading(true)
+      setError('')
+      
       const restaurants = await restaurantsAPI.getAll()
       const userRestaurants = restaurants.filter(r => r.manager?.id === user.id || r.managerId === user.id)
       
@@ -29,8 +31,51 @@ function Orders() {
         return
       }
 
-      setError('Funkcja wyświetlania zamówień dla restauracji nie jest jeszcze dostępna w backendzie. Backend nie posiada endpointu do pobierania zamówień po restauracji.')
-      setOrders([])
+      // Pobierz zamówienia dla wszystkich restauracji użytkownika
+      const allOrders = []
+      for (const restaurant of userRestaurants) {
+        try {
+          const restaurantOrders = await ordersAPI.getByRestaurant(restaurant.id)
+          // Dodaj informacje o restauracji i kliencie do każdego zamówienia
+          const ordersWithDetails = await Promise.all(
+            restaurantOrders.map(async (order) => {
+              // Pobierz dane użytkownika (klienta)
+              let customerName = `Użytkownik #${order.user?.id || '?'}`
+              try {
+                if (order.user?.id) {
+                  const customer = await usersAPI.getById(order.user.id)
+                  customerName = customer.name || customer.email || customerName
+                }
+              } catch (err) {
+                console.warn('Could not fetch customer data:', err)
+              }
+
+              return {
+                ...order,
+                restaurantName: restaurant.name,
+                customerName: customerName,
+                items: [] // Backend nie zwraca items w Order modelu
+              }
+            })
+          )
+          allOrders.push(...ordersWithDetails)
+        } catch (err) {
+          console.error(`Error loading orders for restaurant ${restaurant.id}:`, err)
+        }
+      }
+
+      // Sortuj zamówienia po dacie (najnowsze pierwsze)
+      allOrders.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0)
+        const dateB = new Date(b.createdAt || 0)
+        return dateB - dateA
+      })
+
+      setOrders(allOrders)
+      
+      if (allOrders.length === 0) {
+        setError('')
+      }
     } catch (err) {
       setError('Nie udało się załadować zamówień')
       console.error('Error loading orders:', err)
@@ -42,12 +87,15 @@ function Orders() {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await ordersAPI.updateStatus(orderId, newStatus)
+      // Zaktualizuj status w lokalnym stanie
       setOrders(orders.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ))
     } catch (err) {
-      alert('Nie udało się zaktualizować statusu zamówienia')
+      alert(`Nie udało się zaktualizować statusu zamówienia: ${err.message || 'Nieznany błąd'}`)
       console.error('Error updating order status:', err)
+      // Odśwież zamówienia, aby przywrócić poprzedni status
+      await loadOrders()
     }
   }
 
@@ -116,17 +164,24 @@ function Orders() {
               
               <div className="order-details">
                 <div className="order-items">
-                  <h4>Produkty:</h4>
+                  <h4>Informacje o zamówieniu:</h4>
+                  <p><strong>Restauracja:</strong> {order.restaurantName || order.restaurant?.name || 'Nieznana'}</p>
+                  <p><strong>Klient:</strong> {order.customerName}</p>
                   {order.items && order.items.length > 0 ? (
-                    <ul>
-                      {order.items.map((item, index) => (
-                        <li key={index}>
-                          {item.quantity}x {item.name || `Produkt #${item.menuItemId}`}
-                        </li>
-                      ))}
-                    </ul>
+                    <div>
+                      <h5>Produkty:</h5>
+                      <ul>
+                        {order.items.map((item, index) => (
+                          <li key={index}>
+                            {item.quantity}x {item.name || `Produkt #${item.menuItemId}`}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ) : (
-                    <p>Szczegóły pozycji nie są dostępne</p>
+                    <p style={{ fontStyle: 'italic', color: '#666' }}>
+                      Szczegóły pozycji zamówienia nie są dostępne w tym widoku.
+                    </p>
                   )}
                 </div>
               </div>

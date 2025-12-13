@@ -62,6 +62,12 @@ public class OrderService {
                 .getResultList();
     }
 
+    public List<Order> findByRestaurant(int restaurantId) {
+        return em.createNativeQuery("SELECT * FROM orders WHERE restaurant_id = ? ORDER BY created_at DESC", Order.class)
+                .setParameter(1, restaurantId)
+                .getResultList();
+    }
+
     @Transactional
     public void deleteOrder(int id) {
         em.createNativeQuery("DELETE FROM order_items WHERE order_id = ?")

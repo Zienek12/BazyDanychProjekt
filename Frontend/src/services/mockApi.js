@@ -2,6 +2,9 @@ export const mockUsersAPI = {
   register: async (userData) => {
     return Promise.resolve({ id: Date.now(), ...userData })
   },
+  login: async (email, password) => {
+    return Promise.resolve({ id: 1, name: 'Mock User', email: email, role: 'customer' })
+  },
   getAll: async () => {
     return Promise.resolve([])
   },

@@ -1,17 +1,31 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './Auth.css'
 
 function Login() {
+  const location = useLocation()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { login } = useAuth()
+
+  // Obsługa komunikatu z rejestracji
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message)
+      // Wyczyść state po wyświetleniu komunikatu
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+    if (location.state?.email) {
+      setFormData(prev => ({ ...prev, email: location.state.email }))
+    }
+  }, [location, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -72,6 +86,18 @@ function Login() {
             />
           </div>
 
+          {successMessage && (
+            <div className="success-message" style={{ 
+              backgroundColor: '#d4edda', 
+              color: '#155724', 
+              padding: '0.75rem', 
+              borderRadius: '0.25rem', 
+              marginBottom: '1rem',
+              border: '1px solid #c3e6cb'
+            }}>
+              {successMessage}
+            </div>
+          )}
           {error && <div className="error-message">{error}</div>}
           
           <button type="submit" className="btn-primary btn-full" disabled={loading}>

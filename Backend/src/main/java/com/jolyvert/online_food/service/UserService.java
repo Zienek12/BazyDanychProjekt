@@ -16,7 +16,7 @@ public class UserService {
 
 
     @Transactional
-    public boolean registerUser(String name, String email, String password) {
+    public boolean registerUser(String name, String email, String password, String role) {
         Number exists = (Number) em.createNativeQuery(
                         "SELECT COUNT(*) FROM users WHERE email = ?")
                 .setParameter(1, email)
@@ -27,13 +27,34 @@ public class UserService {
         }
 
         em.createNativeQuery(
-                        "INSERT INTO users (name, email, password) VALUES (?, ?, ?)")
+                        "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)")
                 .setParameter(1, name)
                 .setParameter(2, email)
                 .setParameter(3, password)
+                .setParameter(4, role)
                 .executeUpdate();
 
         return true;
+    }
+
+    public User login(String email, String password) {
+        try {
+            List<User> results = em.createNativeQuery(
+                            "SELECT * FROM users WHERE email = ? AND password = ?",
+                            User.class)
+                    .setParameter(1, email)
+                    .setParameter(2, password)
+                    .getResultList();
+            
+            if (results.isEmpty()) {
+                return null; // Użytkownik nie istnieje lub hasło nieprawidłowe
+            }
+            
+            return results.get(0);
+        } catch (Exception e) {
+            // Log exception if needed, but return null for any query errors
+            return null;
+        }
     }
 
     public User findById(int id) {

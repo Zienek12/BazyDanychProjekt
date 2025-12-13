@@ -33,6 +33,12 @@ public class RestaurantService {
                 .getSingleResult();
     }
 
+    public List<Restaurant> findByManager(int managerId) {
+        return em.createNativeQuery("SELECT * FROM restaurants WHERE manager_id = ?", Restaurant.class)
+                .setParameter(1, managerId)
+                .getResultList();
+    }
+
     @Transactional
     public void createRestaurant(String name, String address, int managerId) {
 

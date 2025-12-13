@@ -34,6 +34,11 @@ public class OrderController {
         return service.findByUser(userId);
     }
 
+    @GetMapping("/restaurant/{restaurantId}")
+    public List<Order> getByRestaurant(@PathVariable int restaurantId) {
+        return service.findByRestaurant(restaurantId);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
         service.deleteOrder(id);
