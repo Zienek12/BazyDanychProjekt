@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { usersAPI, restaurantsAPI, ordersAPI } from '../services/api'
+import { usersAPI, restaurantsAPI, ordersAPI, menuItemsAPI } from '../services/api'
 import './AdminDashboard.css'
 
 // Admin dashboard
@@ -44,18 +44,6 @@ function AdminDashboard() {
     }
   }
 
-  const deactivateUser = async (id) => {
-    const userToDeactivate = users.find(u => u.id === id)
-    const isCurrentlyActive = userToDeactivate?.active !== false
-    
-    if (!window.confirm(
-      `Czy na pewno chcesz ${isCurrentlyActive ? 'dezaktywować' : 'aktywować'} konto użytkownika ${userToDeactivate?.name || `#${id}`}?`
-    )) {
-      return
-    }
-
-    alert('Dezaktywacja konta nie jest jeszcze dostępna przez API. Użyj opcji "Usuń" aby usunąć użytkownika.')
-  }
 
   const toggleRestaurantStatus = async (id) => {
     alert('Zmiana statusu restauracji nie jest jeszcze dostępna przez API')
@@ -82,7 +70,7 @@ function AdminDashboard() {
 
   const deleteUser = async (id) => {
     const userToDelete = users.find(u => u.id === id)
-    if (!window.confirm(`Czy na pewno chcesz dezaktywować konto użytkownika ${userToDelete?.name || `#${id}`}?\n\nTo spowoduje usunięcie użytkownika z systemu.`)) {
+    if (!window.confirm(`Czy na pewno chcesz usunąć użytkownika ${userToDelete?.name || `#${id}`}?\n\nTo spowoduje trwałe usunięcie użytkownika z systemu.`)) {
       return
     }
 
@@ -127,6 +115,38 @@ function AdminDashboard() {
         if (confirmDeleteRestaurants) {
           for (const restaurant of userRestaurants) {
             try {
+              // First, delete all orders for this restaurant (including from other users)
+              try {
+                const restaurantOrders = await ordersAPI.getByRestaurant(restaurant.id)
+                for (const order of restaurantOrders) {
+                  try {
+                    await ordersAPI.delete(order.id)
+                  } catch (orderErr) {
+                    console.error(`Error deleting order ${order.id} for restaurant ${restaurant.id}:`, orderErr)
+                  }
+                }
+              } catch (ordersErr) {
+                console.warn(`Could not fetch/delete orders for restaurant ${restaurant.id}:`, ordersErr)
+              }
+              
+              // Then, delete all menu items for this restaurant
+              try {
+                const menuItems = await menuItemsAPI.getByRestaurant(restaurant.id)
+                for (const menuItem of menuItems) {
+                  try {
+                    await menuItemsAPI.delete(menuItem.id)
+                  } catch (menuItemErr) {
+                    console.error(`Error deleting menu item ${menuItem.id}:`, menuItemErr)
+                  }
+                }
+              } catch (menuItemsErr) {
+                console.warn(`Could not fetch/delete menu items for restaurant ${restaurant.id}:`, menuItemsErr)
+              }
+              
+              // Wait a bit before deleting restaurant
+              await new Promise(resolve => setTimeout(resolve, 300))
+              
+              // Finally delete the restaurant
               await restaurantsAPI.delete(restaurant.id)
             } catch (restaurantErr) {
               console.error(`Error deleting restaurant ${restaurant.id}:`, restaurantErr)
@@ -138,28 +158,29 @@ function AdminDashboard() {
         }
       }
 
-      // Delete user with retry
+      // Wait a bit to ensure all deletions are processed by the database
+      if (userRestaurants.length > 0 || userOrders.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+      
+      // Delete user with multiple retries
       let deletionSuccessful = false
       let lastError = null
+      const maxRetries = 3
       
-      try {
-        await usersAPI.delete(id)
-        deletionSuccessful = true
-      } catch (deleteErr) {
-        lastError = deleteErr
-        console.error('First deletion attempt failed:', deleteErr)
-        
-        // Retry after cleaning related data
-        if (userRestaurants.length > 0 || userOrders.length > 0) {
-          console.log('Retrying user deletion after cleaning up related data...')
-          await new Promise(resolve => setTimeout(resolve, 500))
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          await usersAPI.delete(id)
+          deletionSuccessful = true
+          break
+        } catch (deleteErr) {
+          lastError = deleteErr
+          console.error(`User deletion attempt ${attempt + 1} failed:`, deleteErr)
           
-          try {
-            await usersAPI.delete(id)
-            deletionSuccessful = true
-          } catch (retryErr) {
-            console.error('Retry deletion failed:', retryErr)
-            lastError = retryErr
+          if (attempt < maxRetries) {
+            const waitTime = (attempt + 1) * 1000 // Increasing wait time: 1s, 2s, 3s
+            console.log(`Retrying user deletion after ${waitTime}ms...`)
+            await new Promise(resolve => setTimeout(resolve, waitTime))
           }
         }
       }
@@ -346,9 +367,9 @@ function AdminDashboard() {
                               <button
                                 className="btn-delete"
                                 onClick={() => deleteUser(userItem.id)}
-                                title="Dezaktywuje konto użytkownika (usuwa z systemu)"
+                                title="Usuwa użytkownika z systemu"
                               >
-                                Dezaktywuj
+                                Usuń
                               </button>
                             </div>
                           </td>
