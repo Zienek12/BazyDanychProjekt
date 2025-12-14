@@ -49,25 +49,6 @@ function AdminDashboard() {
     alert('Zmiana statusu restauracji nie jest jeszcze dostępna przez API')
   }
 
-  const clearAllLocalStorage = () => {
-    if (!window.confirm(
-      'Czy na pewno chcesz wyczyścić CAŁY localStorage?\n\n' +
-      'To usunie:\n' +
-      '- Wszystkich użytkowników (dane logowania)\n' +
-      '- Koszyk\n' +
-      '- Token autoryzacji\n' +
-      '- Ustawienia Mock API\n' +
-      '- Wszystkie inne dane zapisane lokalnie\n\n' +
-      'Po wyczyszczeniu zostaniesz wylogowany i strona zostanie przeładowana.'
-    )) {
-      return
-    }
-
-    // Clear localStorage and reload page
-    localStorage.clear()
-    window.location.reload()
-  }
-
   const deleteUser = async (id) => {
     const userToDelete = users.find(u => u.id === id)
     if (!window.confirm(`Czy na pewno chcesz usunąć użytkownika ${userToDelete?.name || `#${id}`}?\n\nTo spowoduje trwałe usunięcie użytkownika z systemu.`)) {
@@ -284,24 +265,7 @@ function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1>Panel Administratora</h1>
-        <button
-          onClick={clearAllLocalStorage}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.875rem'
-          }}
-          title="Wyczyść cały localStorage (użytkownicy, koszyk, token, ustawienia)"
-        >
-          🗑️ Wyczyść localStorage
-        </button>
-      </div>
+      <h1 style={{ marginBottom: '1.5rem' }}>Panel Administratora</h1>
       
       <div className="admin-tabs">
         <button

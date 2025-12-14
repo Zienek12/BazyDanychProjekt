@@ -40,7 +40,6 @@ function RestaurantDetails() {
       const menuWithImages = menuData.map(item => ({
         ...item,
         restaurantId: item.restaurant?.id || item.restaurantId || restaurantData.id,
-        available: item.available !== false,
         image: item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
       }))
       setMenuItems(menuWithImages)
@@ -58,7 +57,7 @@ function RestaurantDetails() {
   // Filter menu by selected category
   const filteredMenu = selectedCategory === 'Wszystkie'
     ? menuItems
-    : menuItems.filter(item => item.category === selectedCategory && item.available !== false)
+    : menuItems.filter(item => item.category === selectedCategory)
 
   const handleAddToCart = (item) => {
     const itemWithRestaurant = {

@@ -22,8 +22,7 @@ function RestaurantDashboard() {
     name: '',
     description: '',
     price: '',
-    category: 'Pizza',
-    available: true
+    category: 'Pizza'
   })
 
   useEffect(() => {
@@ -52,8 +51,7 @@ function RestaurantDashboard() {
       // Set default values for menu items
       const menuWithDefaults = menu.map(item => ({
         ...item,
-        restaurantId: item.restaurant?.id || item.restaurantId || userRestaurant.id,
-        available: item.available !== false
+        restaurantId: item.restaurant?.id || item.restaurantId || userRestaurant.id
       }))
       setMenuItems(menuWithDefaults)
     } catch (err) {
@@ -69,8 +67,7 @@ function RestaurantDashboard() {
       name: '',
       description: '',
       price: '',
-      category: 'Pizza',
-      available: true
+      category: 'Pizza'
     })
     setEditingItem(null)
     setShowAddForm(true)
@@ -81,8 +78,7 @@ function RestaurantDashboard() {
       name: item.name,
       description: item.description,
       price: item.price.toString(),
-      category: item.category,
-      available: item.available
+      category: item.category
     })
     setEditingItem(item.id)
     setShowAddForm(true)
@@ -123,8 +119,7 @@ function RestaurantDashboard() {
         name: '',
         description: '',
         price: '',
-        category: 'Pizza',
-        available: true
+        category: 'Pizza'
       })
     } catch (err) {
       const errorMessage = err.message || 'Nie udało się zapisać pozycji menu'
@@ -149,10 +144,6 @@ function RestaurantDashboard() {
       alert('Nie udało się usunąć produktu')
       console.error('Error deleting menu item:', err)
     }
-  }
-
-  const toggleAvailability = async (id) => {
-    alert('Zmiana dostępności nie jest jeszcze dostępna przez API')
   }
 
   const handleCreateRestaurant = async (e) => {
@@ -318,16 +309,6 @@ function RestaurantDashboard() {
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={formData.available}
-                    onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
-                  />
-                  Dostępne
-                </label>
-              </div>
             </div>
             <div className="form-actions">
               <button type="submit" className="btn-primary">
@@ -357,12 +338,9 @@ function RestaurantDashboard() {
         ) : (
           <div className="menu-items-grid">
             {menuItems.map(item => (
-              <div key={item.id} className={`menu-item-card ${!item.available ? 'unavailable' : ''}`}>
+              <div key={item.id} className="menu-item-card">
                 <div className="menu-item-header">
                   <h3>{item.name}</h3>
-                  <span className={`availability-badge ${item.available ? 'available' : 'unavailable'}`}>
-                    {item.available ? 'Dostępne' : 'Niedostępne'}
-                  </span>
                 </div>
                 <p className="menu-item-category">{item.category}</p>
                 <p className="menu-item-description">{item.description}</p>
