@@ -370,12 +370,6 @@ function RestaurantDashboard() {
                   <span className="menu-item-price">{item.price.toFixed(2)} zł</span>
                   <div className="menu-item-actions">
                     <button
-                      className="btn-toggle"
-                      onClick={() => toggleAvailability(item.id)}
-                    >
-                      {item.available ? '❌' : '✅'}
-                    </button>
-                    <button
                       className="btn-edit"
                       onClick={() => handleEditItem(item)}
                     >
